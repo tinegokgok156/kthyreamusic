@@ -7,15 +7,18 @@ const PORT = 3000;
 
 const SONGS_DIR = path.join(__dirname, "songs");
 
-app.use("/songs", express.static(SONGS_DIR));
 app.use(express.static("public"));
+app.use("/songs", express.static(SONGS_DIR));
 
-function getSongs() {
+app.get("/api/songs", (req, res) => {
+
     const folders = fs.readdirSync(SONGS_DIR);
 
-    return folders.map(folder => {
-        const infoPath = path.join(SONGS_DIR, folder, "info.json");
-        const info = JSON.parse(fs.readFileSync(infoPath));
+    const songs = folders.map(folder => {
+
+        const info = JSON.parse(
+            fs.readFileSync(path.join(SONGS_DIR, folder, "info.json"))
+        );
 
         return {
             id: folder,
@@ -24,17 +27,31 @@ function getSongs() {
             album: info.album
         };
     });
-}
 
-app.get("/", (req, res) => {
+    res.json(songs);
+});
 
-    const songs = getSongs();
+app.get("/api/song/:id", (req, res) => {
 
-    let list = songs.map(song =>
-        `<a class="song" href="/song/${song.id}">
-            ${song.name} - ${song.artist}
-        </a>`
-    ).join("");
+    const id = req.params.id;
+
+    const info = JSON.parse(
+        fs.readFileSync(path.join(SONGS_DIR, id, "info.json"))
+    );
+
+    const files = fs.readdirSync(path.join(SONGS_DIR, id));
+
+    const image = files.find(f =>
+        f.endsWith(".png") ||
+        f.endsWith(".jpg") ||
+        f.endsWith(".jpeg") ||
+        f.endsWith(".webp")
+    );
+
+    const mp3 = files.find(f => f.endsWith(".mp3"));
+
+    res.json({
+        ...info,    ).join("");
 
     res.send(`
     <html>
